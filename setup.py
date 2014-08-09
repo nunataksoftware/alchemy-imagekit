@@ -34,7 +34,7 @@ setup(
     name='alchemy-imagekit',
     version=pkgmeta['__version__'],
     description='Automated image processing for SQLAlchemy models.',
-    long_description=read(os.path.join(os.path.dirname(__file__), 'README.rst')),
+    long_description=read(os.path.join(os.path.dirname(__file__), 'README.md')),
     author='Guillermo Nuñez',
     author_email='gui.nunez@gmail.com',
     maintainer='Guillermo Nuñez',
@@ -57,7 +57,20 @@ setup(
     ],
     extras_require={
     },
+    download_url = 'https://github.com/nunataksoftware/alchemy-imagekit/tarball/0.1',
     keywords = ['image', 'processing', 'sqlalchemy'],
-    classifiers = [],
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Environment :: Web Environment',
+        'Framework :: Flask',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.2',
+        'Programming Language :: Python :: 3.3',
+        'Topic :: Utilities'
+    ],
 
 )

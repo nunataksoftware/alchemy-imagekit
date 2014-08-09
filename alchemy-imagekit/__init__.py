@@ -21,8 +21,24 @@ def mkdir_p(path):
         else:
             raise
 
+class FieldProperty(object):
+    """ TODO: hacer andar esto con todos los campos """
+    def __init__(self, field, source):
+        self.field, self.source = field, source
 
-class ImageSpecField():
+    def __get__(self, obj, typ=None):
+
+        if typ is None:
+            typ = obj.__class__
+        specs = self.field(
+            source = getattr(obj, self.source),
+            model = typ.__name__,
+            id = obj.id)
+
+        return specs.url()
+
+
+class ImageSpecField(object):
 
     def __init__(
         self, model=None, dest=None, processors=None, format=None, options=None,
@@ -42,6 +58,10 @@ class ImageSpecField():
         self.id = id
         self.dest = dest
         self.model = model
+
+    @classmethod
+    def specs(cls, source):
+        return FieldProperty(cls, source)
 
     def url(self):
         """ Obtiene la url final de la imagen, si no existe esta versión, la genera """
