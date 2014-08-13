@@ -1,0 +1,76 @@
+<!doctype html>
+
+<!-- HTML5 Boilerplate -->
+<!--[if lt IE 7]><html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if (IE 7)&!(IEMobile)]><html class="no-js lt-ie9 lt-ie8" lang="en"><![endif]-->
+<!--[if (IE 8)&!(IEMobile)]><html class="no-js lt-ie9" lang="en"><![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"><!--<![endif]-->
+
+<head>
+<meta charset="utf-8">
+
+<title>Alchemy-Imagekit Example</title>
+
+<meta name="description" content="Test alchemy-imagekit.">
+<meta name="author" content="Guillermo Nuñez - Nunatak Software S.A.">
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/static/css/normalize.css">
+
+<!--[if (lt IE 9) & (!IEMobile)]>
+<script src="js/selectivizr-min.js"></script>
+<![endif]-->
+
+<!-- JavaScript -->
+<script src="/static/js/jquery-1.7.2.min.js"></script>
+
+<!-- Icons -->
+
+<!-- 16x16 -->
+<link rel="shortcut icon" href="/static/img/favicon.ico">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="msapplication-TileColor" content="#000">
+<meta http-equiv="cleartype" content="on">
+</head>
+
+<body class="clearfix">
+
+<section>
+	<header>
+		<h1>Example alchemy-imagekit</h1>
+	</header>
+
+    {% for content in contents %}
+    <article>
+            <h2>{{ content.title }}</h2>
+            <figure>
+                <img src="/static/uploads/{{ content.image }}">
+                <figcaption>Original</figcaption>
+            </figure>
+            <figure>
+                <img src="/static/uploads/{{ content.image_thumb }}">
+                <figcaption>Thumb</figcaption>
+            </figure>
+            <figure>
+                <img src="/static/uploads/{{ content.image_thumb2 }}">
+                <figcaption>Thumb 2</figcaption>
+            </figure>
+            <figure>
+                <img src="/static/uploads/{{ content.image_water }}">
+                <figcaption>Thumb 2</figcaption>
+            </figure>
+
+    </article>
+    {% endfor %}
+
+</section>
+
+<script>window.jQuery || document.write('<script src="js/jquery-1.7.2.min.js"><\/script>')</script>
+</body>
+</html>

@@ -1,11 +1,10 @@
 #!env/bin/python
 # -*- coding: utf-8 -*-
 
-from pilkit.processors import ProcessorPipeline, ResizeToFit, Adjust
+from pilkit.processors import ProcessorPipeline
 
 from pilkit import utils
 
-from config import UPLOADS_DIR
 import os
 import errno
 from PIL import Image
@@ -21,62 +20,73 @@ def mkdir_p(path):
         else:
             raise
 
-class FieldProperty(object):
-    """ TODO: hacer andar esto con todos los campos """
-    def __init__(self, field, source):
-        self.field, self.source = field, source
-
-    def __get__(self, obj, typ=None):
-
-        if typ is None:
-            typ = obj.__class__
-        specs = self.field(
-            source = getattr(obj, self.source),
-            model = typ.__name__,
-            id = obj.id)
-
-        return specs.url()
-
 
 class ImageSpecField(object):
 
     def __init__(
-        self, model=None, dest=None, processors=None, format=None, options=None,
-            source=None, cachefile_storage=None, autoconvert=None,
-            cachefile_backend=None, cachefile_strategy=None, spec=None,
-            id=None):
+        self, model=None, dest=None, processors=None, format='JPEG', options=None,
+            source=None, id=None, uploads_dir=None):
 
         self.processors = processors
         self.format = format
         self.options = options
         self.source = source
-        self.cachefile_storage = cachefile_storage
-        self.autoconvert = autoconvert
-        self.cachefile_backend = cachefile_backend
-        self.cachefile_strategy = cachefile_strategy
-        self.spec = spec
         self.id = id
         self.dest = dest
         self.model = model
+        self.uploads_dir = uploads_dir
 
-    @classmethod
-    def specs(cls, source):
-        return FieldProperty(cls, source)
+    def get_uploads_dir(self):
+        """ 
+        Returns the base dir where original and generated images are stored 
+        
+        It looks first for the directory passed as a parameter, 
+        if it is None, it looks for the config module.
+        If none of this exists, it throws an exception
+        """
+
+        if self.uploads_dir:
+            uploads_dir = self.uploads_dir
+        else:
+            try:
+                import config
+                uploads_dir = config.UPLOADS_DIR
+            except Exception, e:
+                e.message += " You shoud have a config module in \
+                your App or send a uploads_dir parameter to your specs"
+                raise e
+
+        return uploads_dir
+
+    def get_extension(self):
+        return '.' + self.format.lower()
 
     def url(self):
-        """ Obtiene la url final de la imagen, si no existe esta versión, la genera """
+        """ Returns the final url for this version of the image. 
+        If it doesn't exists, it generates it"""
 
-        img = Image.open(os.path.join(UPLOADS_DIR, self.source))
+        uploads_dir = self.get_uploads_dir()
 
+        img = Image.open(os.path.join(uploads_dir, self.source))
 
-        # Generamos hash a partir del histograma
+        # We generate a filename using the original image's histogram and internal variables
+        # the filename's end is sent by the caller, but it should be the field name for
+        # this image version
         hashimg = hashlib.sha256()
-        hashimg.update(str(img.histogram()))
+        propertieslist = [str(self.source), str(self.dest), str(
+            self.processors), str(self.format), str(self.options), str(self.uploads_dir)]
+        hashimg.update(str(img.histogram()) + ','.join(propertieslist))
+
+        file_extension = self.get_extension()
+
         new_image_filename = str(
-            hashimg.hexdigest()) + "_" + self.dest + '.jpg'
+            hashimg.hexdigest()) + "_" + self.dest + file_extension
+
+        # generate the full names and create directories if necesary
+        base_cache_dir = os.path.join('cache', self.model, str(self.id))
 
         cache_dir = os.path.join(
-            UPLOADS_DIR, 'cache', self.model, str(self.id))
+            uploads_dir, base_cache_dir)
 
         cache_filename = os.path.join(
             cache_dir, new_image_filename)
@@ -84,17 +94,46 @@ class ImageSpecField(object):
         if not os.path.exists(cache_dir):
             mkdir_p(cache_dir)
 
-        # Vemos si la imagen ya existia
+        # Check if the generated image already existed
         if os.path.exists(cache_filename):
-            return "/media/cache/" + self.model + "/" + str(self.id) + "/" + new_image_filename
+            return "/cache/" + self.model + "/" + str(self.id) + "/" + new_image_filename
 
         else:
+
+            # we process the image and save it on the cache folder
             processor = ProcessorPipeline(self.processors)
             new_image = processor.process(img)
 
-            utils.save_image(new_image, cache_filename, 'JPEG')
+            utils.save_image(new_image, cache_filename, self.format, self.options)
 
-            return "/media/cache/" + self.model + "/" + str(self.id) + "/" + new_image_filename
+            return os.path.join(base_cache_dir, new_image_filename)
 
     def __unicode__(self):
         return self.url()
+
+    @classmethod
+    def specs(cls, source, dest=None, processors=None, format='JPEG', options=None, uploads_dir=None):
+        return FieldProperty(cls, source, dest, processors, format, options, uploads_dir)
+
+
+class FieldProperty(object):
+
+    def __init__(self, field, source, dest, processors, format, options, uploads_dir):
+        self.field, self.source, self.dest, self.processors, self.format, self.options, self.uploads_dir = field, source, dest, processors, format, options, uploads_dir
+
+    def __get__(self, obj, typ=None):
+
+        if typ is None:
+            typ = obj.__class__
+        specs = self.field(
+            source=getattr(obj, self.source),
+            dest=self.dest,
+            processors=self.processors,
+            options=self.options,
+            format=self.format,
+            uploads_dir=self.uploads_dir,
+            model=typ.__name__,
+            id=obj.id)
+        print "en get: " + str(self.uploads_dir)
+        print typ.__name__
+        return specs.url()
