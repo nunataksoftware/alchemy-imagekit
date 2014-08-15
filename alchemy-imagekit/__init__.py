@@ -61,6 +61,29 @@ class ImageSpecField(object):
     def get_extension(self):
         return '.' + self.format.lower()
 
+
+    def generate_filename(self, img):
+        """ 
+        We generate a filename using the original image's histogram and internal variables
+        the filename's end is sent by the caller, but it should be the field name for
+        this image version 
+        """
+
+        hashimg = hashlib.sha256()
+
+        processors_string = ""
+
+        for processor in self.processors:
+            processors_string += str(processor.__class__)
+            processors_string += str(processor.__dict__)
+
+        propertieslist = [str(self.source), str(self.dest), processors_string, str(self.format), str(self.options), str(self.uploads_dir)]
+        hashimg.update(str(img.histogram()) + ','.join(propertieslist))
+
+        file_extension = self.get_extension()
+
+        return str(hashimg.hexdigest()) + "_" + self.dest + file_extension
+
     def url(self):
         """ Returns the final url for this version of the image. 
         If it doesn't exists, it generates it"""
@@ -69,18 +92,7 @@ class ImageSpecField(object):
 
         img = Image.open(os.path.join(uploads_dir, self.source))
 
-        # We generate a filename using the original image's histogram and internal variables
-        # the filename's end is sent by the caller, but it should be the field name for
-        # this image version
-        hashimg = hashlib.sha256()
-        propertieslist = [str(self.source), str(self.dest), str(
-            self.processors), str(self.format), str(self.options), str(self.uploads_dir)]
-        hashimg.update(str(img.histogram()) + ','.join(propertieslist))
-
-        file_extension = self.get_extension()
-
-        new_image_filename = str(
-            hashimg.hexdigest()) + "_" + self.dest + file_extension
+        new_image_filename = self.generate_filename(img)
 
         # generate the full names and create directories if necesary
         base_cache_dir = os.path.join('cache', self.model, str(self.id))
@@ -134,6 +146,4 @@ class FieldProperty(object):
             uploads_dir=self.uploads_dir,
             model=typ.__name__,
             id=obj.id)
-        print "en get: " + str(self.uploads_dir)
-        print typ.__name__
         return specs.url()
